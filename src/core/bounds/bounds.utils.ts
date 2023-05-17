@@ -4,6 +4,7 @@ import {
   BoundsType,
   PositionType,
   ReactZoomPanPinchContext,
+  //ReactZoomPanPinchContextState,
 } from "../../models";
 import { ComponentsSizesType } from "./bounds.types";
 
@@ -41,19 +42,21 @@ export const getBounds = (
   newContentHeight: number,
   diffHeight: number,
   centerZoomedOut: boolean,
+  imageWidth: number, // new argument for image's natural width
+  imageHeight: number, // new argument for image's natural height
 ): BoundsType => {
   const scaleWidthFactor =
-    wrapperWidth > newContentWidth
+    imageWidth > newContentWidth // Use imageWidth instead of wrapperWidth
       ? diffWidth * (centerZoomedOut ? 1 : 0.5)
       : 0;
   const scaleHeightFactor =
-    wrapperHeight > newContentHeight
+    imageHeight > newContentHeight // Use imageHeight instead of wrapperHeight
       ? diffHeight * (centerZoomedOut ? 1 : 0.5)
       : 0;
 
-  const minPositionX = wrapperWidth - newContentWidth - scaleWidthFactor;
+  const minPositionX = imageWidth - newContentWidth - scaleWidthFactor; // Use imageWidth instead of wrapperWidth
   const maxPositionX = scaleWidthFactor;
-  const minPositionY = wrapperHeight - newContentHeight - scaleHeightFactor;
+  const minPositionY = imageHeight - newContentHeight - scaleHeightFactor; // Use imageHeight instead of wrapperHeight
   const maxPositionY = scaleHeightFactor;
 
   return { minPositionX, maxPositionX, minPositionY, maxPositionY };
@@ -62,6 +65,8 @@ export const getBounds = (
 export const calculateBounds = (
   contextInstance: ReactZoomPanPinchContext,
   newScale: number,
+  imageWidth: number, // new argument for image's natural width
+  imageHeight: number, // new argument for image's natural height
 ): BoundsType => {
   const { wrapperComponent, contentComponent } = contextInstance;
   const { centerZoomedOut } = contextInstance.setup;
@@ -87,9 +92,14 @@ export const calculateBounds = (
     newContentHeight,
     newDiffHeight,
     Boolean(centerZoomedOut),
+    imageWidth, // Pass imageWidth to getBounds
+    imageHeight, // Pass imageHeight to getBounds
   );
   return bounds;
 };
+
+
+
 
 /**
  * Keeps value between given bounds, used for limiting view to given boundaries
@@ -110,17 +120,22 @@ export const boundLimiter = (
   return roundNumber(value, 2);
 };
 
+export type ExtendedZoomPanPinchContext = ReactZoomPanPinchContext & {
+  imageWidth: number;
+  imageHeight: number;
+};
+
 export const handleCalculateBounds = (
-  contextInstance: ReactZoomPanPinchContext,
+  contextInstance: ExtendedZoomPanPinchContext,
   newScale: number,
 ): BoundsType => {
-  const bounds = calculateBounds(contextInstance, newScale);
+  const { imageWidth, imageHeight } = contextInstance;
+  const bounds = calculateBounds(contextInstance, newScale, imageWidth, imageHeight);
 
-  // Save bounds
-  contextInstance.bounds = bounds;
   return bounds;
 };
 
+ 
 export function getMouseBoundedPosition(
   positionX: number,
   positionY: number,
